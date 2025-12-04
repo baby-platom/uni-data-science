@@ -4,7 +4,7 @@ from pathlib import Path
 import aiofiles
 import aiohttp
 
-from app.constants import DATASET_DOWNLOAD_URL_MAPPING
+from app.constants import SOURCE_DATASETS_DOWNLOAD_URL_MAPPING
 
 
 async def download_file(
@@ -35,7 +35,10 @@ async def main() -> None:
     tasks: list[asyncio.Task] = []
 
     async with aiohttp.ClientSession() as http_session:
-        for target_file_path, download_url in DATASET_DOWNLOAD_URL_MAPPING.items():
+        for (
+            target_file_path,
+            download_url,
+        ) in SOURCE_DATASETS_DOWNLOAD_URL_MAPPING.items():
             task = asyncio.create_task(
                 download_file(
                     http_session,

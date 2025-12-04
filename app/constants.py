@@ -5,12 +5,14 @@ DATA_DIR = Path("data")
 TIME_SERIES_CSV_PATH = DATA_DIR / "time_series_60min_singleindex.csv"
 WEATHER_CSV_PATH = DATA_DIR / "weather_data.csv"
 
-DATASET_DOWNLOAD_URL_MAPPING = {
+UNITED_DATASET_CSV_PATH = DATA_DIR / "united_dataset.csv"
+
+SOURCE_DATASETS_DOWNLOAD_URL_MAPPING = {
     TIME_SERIES_CSV_PATH: "https://data.open-power-system-data.org/time_series/2020-10-06/time_series_60min_singleindex.csv",
     WEATHER_CSV_PATH: "https://data.open-power-system-data.org/weather_data/2020-09-16/weather_data.csv",
 }
 
-COUNTRY_CODES = {
+COUNTRY_CODES = [
     "AT",
     "BE",
     "BG",
@@ -39,4 +41,4 @@ COUNTRY_CODES = {
     "SE",
     "SI",
     "SK",
-}
+]
