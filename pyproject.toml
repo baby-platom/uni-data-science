@@ -3,4 +3,47 @@ name = "uni-data-science"
 version = "0.1.0"
 readme = "README.md"
 requires-python = "==3.12.7"
-dependencies = []
+dependencies = [
+    "aiofiles>=25.1.0",
+    "aiohttp>=3.13.2",
+    "holidays>=0.86",
+    "pandas>=2.3.3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6.9",
+]
+
+[tool.ruff]
+src = ["app"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "A", "ANN", "ARG", "B", "BLE", "C4", "C90", "COM", "D", "E", "F", "FBT", "FIX",
+    "FLY", "G", "I", "ICN", "INP", "ISC", "N", "PIE", "PL", "PT", "PTH", "PYI", "Q",
+    "RET",  "RSE", "RUF", "S", "SIM", "SLF", "T20", "TD", "TID", "TRY", "UP", "W",
+    "YTT"
+]
+ignore = [
+    "COM812", "D100", "D101", "D102", "D103", "D104", "D105",
+    "D106", "D107", "D202", "D203", "D213", "D400", "D401", "D413", "D415", "ISC001",
+    "PERF", "PLR0913", "T201", "TRY002", "TRY003", "TRY300"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "N999"]
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.lint.isort]
+known-local-folder = ["app"]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.pep8-naming]
+ignore-names = ["e", "k", "v"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
