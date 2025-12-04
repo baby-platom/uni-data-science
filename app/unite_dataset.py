@@ -156,7 +156,7 @@ def add_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# 7. Column ordering: per country
+# 7. Column ordering
 
 
 def order_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -196,6 +196,31 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[ordered_cols]
 
 
+# 8. Rename '{country_code}_price_day_ahead' column
+
+
+def rename_price_day_ahead_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename '{country_code}_price_day_ahead' to '{country_code}_price_pew_mwh'."""
+
+    old_suffix = "price_day_ahead"
+    updated_suffix = "price_pew_mwh"
+
+    rename_mapping: dict[str, str] = {}
+
+    for column in df.columns:
+        if column.endswith(old_suffix):
+            country_code = column[:2]
+            if country_code not in COUNTRY_CODES:
+                raise ValueError("Unexpected country code")
+
+            updated_column_name = f"{country_code}_{updated_suffix}"
+            rename_mapping[column] = updated_column_name
+
+    if rename_mapping:
+        df = df.rename(columns=rename_mapping)
+    return df
+
+
 # -------------------------------------------------------------------
 # Full pipeline
 # -------------------------------------------------------------------
@@ -213,7 +238,8 @@ def build_united_dataset(
 
     merged = merge_power_and_weather(ts_sel, weather_sel)
     merged = add_calendar_features(merged)
-    return order_columns(merged)
+    merged = order_columns(merged)
+    return rename_price_day_ahead_columns(merged)
 
 
 if __name__ == "__main__":
