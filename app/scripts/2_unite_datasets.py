@@ -10,13 +10,13 @@ from app.constants import (
     WEATHER_CSV_PATH,
 )
 
-TS_SUFFIXES = [
+TS_REQUIRED_SUFFIXES = [
     "load_actual_entsoe_transparency",
     "load_forecast_entsoe_transparency",
-    "price_day_ahead",
 ]
+TS_OPTIONAL_SUFFIXES = ["price_day_ahead"]
 
-WEATHER_SUFFIXES = [
+WEATHER_REQUIRED_SUFFIXES = [
     "temperature",
     "radiation_direct_horizontal",
     "radiation_diffuse_horizontal",
@@ -55,9 +55,16 @@ def normalize_gb_in_time_series(ts: pd.DataFrame) -> pd.DataFrame:
     """
     ts = ts.copy()
 
-    for suffix in TS_SUFFIXES:
-        old_col = f"GB_GBN_{suffix}"
-        new_col = f"GB_{suffix}"
+    for suffix in TS_REQUIRED_SUFFIXES:
+        old_col, new_col = f"GB_GBN_{suffix}", f"GB_{suffix}"
+
+        if old_col not in ts.columns:
+            raise ValueError("Missing required column")
+
+        ts[new_col] = ts[old_col]
+
+    for optional_suffix in TS_OPTIONAL_SUFFIXES:
+        old_col, new_col = f"GB_GBN_{optional_suffix}", f"GB_{optional_suffix}"
         if old_col in ts.columns:
             ts[new_col] = ts[old_col]
 
@@ -73,14 +80,22 @@ def select_time_series_columns(ts: pd.DataFrame) -> pd.DataFrame:
     Keep:
     - utc_timestamp
     - {country}_{suffix} for all countries in `COUNTRY_CODES` and suffixes in
-        `TS_SUFFIXES`
+        `TS_REQUIRED_SUFFIXES`
+    - {country}_{optional_suffix} for all countries in `COUNTRY_CODES` and suffixes in
+        `TS_OPTIONAL_SUFFIXES` only if the optional column exists
     """
     ts_sel = pd.DataFrame()
     ts_sel["utc_timestamp"] = ts["utc_timestamp"]
 
     for country in COUNTRY_CODES:
-        for suffix in TS_SUFFIXES:
+        for suffix in TS_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
+            if col not in ts.columns:
+                raise ValueError("Missing required column")
+            ts_sel[col] = ts[col]
+
+        for optional_suffix in TS_OPTIONAL_SUFFIXES:
+            col = f"{country}_{optional_suffix}"
             if col in ts.columns:
                 ts_sel[col] = ts[col]
 
@@ -96,13 +111,13 @@ def select_weather_columns(weather: pd.DataFrame) -> pd.DataFrame:
     Keep:
     - utc_timestamp
     - {country}_{suffix} for all countries in `COUNTRY_CODES` and suffixes in
-        `WEATHER_SUFFIXES`
+        `WEATHER_REQUIRED_SUFFIXES`
     """
     weather_sel = pd.DataFrame()
     weather_sel["utc_timestamp"] = weather["utc_timestamp"]
 
     for country in COUNTRY_CODES:
-        for suffix in WEATHER_SUFFIXES:
+        for suffix in WEATHER_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
             if col in weather.columns:
                 weather_sel[col] = weather[col]
@@ -171,14 +186,14 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Per-country blocks
     for country in COUNTRY_CODES:
         # 3 load-related
-        for suffix in TS_SUFFIXES:
+        for suffix in [*TS_REQUIRED_SUFFIXES, *TS_OPTIONAL_SUFFIXES]:
             col = f"{country}_{suffix}"
             if col in df.columns and col not in used:
                 ordered_cols.append(col)
                 used.add(col)
 
         # 3 weather-related
-        for suffix in WEATHER_SUFFIXES:
+        for suffix in WEATHER_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
             if col in df.columns and col not in used:
                 ordered_cols.append(col)

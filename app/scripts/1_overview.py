@@ -17,7 +17,7 @@ def get_basic_overview(df: pd.DataFrame, df_name: str, top_columns_n: int = 25) 
     df.info(max_cols=top_columns_n)
 
     print(f"\ncolumns overview (top {top_columns_n} included):")
-    print(list(time_series_df.columns)[:top_columns_n])
+    print(list(df.columns)[:top_columns_n])
 
 
 get_basic_overview(time_series_df, TIME_SERIES_CSV_PATH.name)
