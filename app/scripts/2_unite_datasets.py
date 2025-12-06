@@ -14,7 +14,6 @@ TS_REQUIRED_SUFFIXES = [
     "load_actual_entsoe_transparency",
     "load_forecast_entsoe_transparency",
 ]
-TS_OPTIONAL_SUFFIXES = ["price_day_ahead"]
 
 WEATHER_REQUIRED_SUFFIXES = [
     "temperature",
@@ -63,11 +62,6 @@ def normalize_gb_in_time_series(ts: pd.DataFrame) -> pd.DataFrame:
 
         ts[new_col] = ts[old_col]
 
-    for optional_suffix in TS_OPTIONAL_SUFFIXES:
-        old_col, new_col = f"GB_GBN_{optional_suffix}", f"GB_{optional_suffix}"
-        if old_col in ts.columns:
-            ts[new_col] = ts[old_col]
-
     return ts
 
 
@@ -81,8 +75,6 @@ def select_time_series_columns(ts: pd.DataFrame) -> pd.DataFrame:
     - utc_timestamp
     - {country}_{suffix} for all countries in `COUNTRY_CODES` and suffixes in
         `TS_REQUIRED_SUFFIXES`
-    - {country}_{optional_suffix} for all countries in `COUNTRY_CODES` and suffixes in
-        `TS_OPTIONAL_SUFFIXES` only if the optional column exists
     """
     ts_sel = pd.DataFrame()
     ts_sel["utc_timestamp"] = ts["utc_timestamp"]
@@ -93,11 +85,6 @@ def select_time_series_columns(ts: pd.DataFrame) -> pd.DataFrame:
             if col not in ts.columns:
                 raise ValueError("Missing required column")
             ts_sel[col] = ts[col]
-
-        for optional_suffix in TS_OPTIONAL_SUFFIXES:
-            col = f"{country}_{optional_suffix}"
-            if col in ts.columns:
-                ts_sel[col] = ts[col]
 
     return ts_sel
 
@@ -132,12 +119,12 @@ def merge_power_and_weather(
     ts_sel: pd.DataFrame,
     weather_sel: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Merge on utc_timestamp, keeping the time range of the load data."""
+    """Merge on utc_timestamp, keeping the intersecting time range."""
 
     return ts_sel.merge(
         weather_sel,
         on="utc_timestamp",
-        how="left",  # keep all load rows; weather has a longer time range
+        how="inner",
         validate="one_to_one",
     )
 
@@ -186,7 +173,7 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Per-country blocks
     for country in COUNTRY_CODES:
         # 3 load-related
-        for suffix in [*TS_REQUIRED_SUFFIXES, *TS_OPTIONAL_SUFFIXES]:
+        for suffix in TS_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
             if col in df.columns and col not in used:
                 ordered_cols.append(col)
@@ -211,31 +198,6 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[ordered_cols]
 
 
-# 8. Rename '{country_code}_price_day_ahead' column
-
-
-def rename_price_day_ahead_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename '{country_code}_price_day_ahead' to '{country_code}_price_pew_mwh'."""
-
-    old_suffix = "price_day_ahead"
-    updated_suffix = "price_pew_mwh"
-
-    rename_mapping: dict[str, str] = {}
-
-    for column in df.columns:
-        if column.endswith(old_suffix):
-            country_code = column[:2]
-            if country_code not in COUNTRY_CODES:
-                raise ValueError("Unexpected country code")
-
-            updated_column_name = f"{country_code}_{updated_suffix}"
-            rename_mapping[column] = updated_column_name
-
-    if rename_mapping:
-        df = df.rename(columns=rename_mapping)
-    return df
-
-
 # -------------------------------------------------------------------
 # Full pipeline
 # -------------------------------------------------------------------
@@ -253,8 +215,7 @@ def build_united_dataset(
 
     merged = merge_power_and_weather(ts_sel, weather_sel)
     merged = add_calendar_features(merged)
-    merged = order_columns(merged)
-    return rename_price_day_ahead_columns(merged)
+    return order_columns(merged)
 
 
 if __name__ == "__main__":
