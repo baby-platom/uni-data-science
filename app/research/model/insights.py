@@ -140,7 +140,7 @@ def plot_actual_vs_predicted_for_country(
     plt.savefig(output_path, dpi=150)
     plt.close()
 
-    print(f"Saved plot for country {country} to {output_path}")
+    print(f"Saved actual_vs_pred_ plot for country {country} to {output_path}")
 
 
 def hourly_error_profile(
