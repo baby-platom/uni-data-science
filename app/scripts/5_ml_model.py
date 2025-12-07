@@ -6,108 +6,15 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from app.constants import COUNTRY_CODES, RANDOM_STATE, UNITED_DATASET_CSV_PATH
+from app.constants import RANDOM_STATE
+from app.data_prep import (
+    add_features,
+    load_raw_long_dataset,
+    preprocess_raw_long_dataset,
+)
 
 
-# 1. Convert wide -> long (one row per country per hour)
-def wide_to_long(df_wide: pd.DataFrame) -> pd.DataFrame:
-    base_cols = ["utc_timestamp", "date", "is_weekend"]
-    long_parts = []
-
-    for code in COUNTRY_CODES:
-        col_map = {
-            f"{code}_load_actual_entsoe_transparency": "load_actual",
-            f"{code}_load_forecast_entsoe_transparency": "load_forecast",
-            f"{code}_temperature": "temperature",
-            f"{code}_radiation_direct_horizontal": "rad_dir",
-            f"{code}_radiation_diffuse_horizontal": "rad_diff",
-            f"{code}_is_holiday": "is_holiday",
-        }
-
-        cols_c = base_cols + list(col_map.keys())
-
-        df_c = df_wide[cols_c].copy()
-        df_c = df_c.rename(columns=col_map)
-        df_c["country"] = code
-        long_parts.append(df_c)
-
-    df_long = pd.concat(long_parts, ignore_index=True)
-
-    # Parse dates
-    df_long["utc_timestamp"] = pd.to_datetime(df_long["utc_timestamp"])
-    df_long["date"] = pd.to_datetime(df_long["date"])
-
-    # Sort for time-series operations
-    return df_long.sort_values(["country", "utc_timestamp"]).reset_index(drop=True)
-
-
-# 2. Handle missing values
-def handle_missing_values(df_long: pd.DataFrame) -> pd.DataFrame:
-    numeric_series_cols = [
-        "load_actual",
-        "temperature",
-        "rad_dir",
-        "rad_diff",
-        "load_forecast",
-    ]
-
-    for col in numeric_series_cols:
-        df_long[col] = df_long.groupby("country")[col].transform(
-            lambda s: s.interpolate().ffill().bfill()
-        )
-
-    # Drop rows where target is still missing (unlikely)
-    count_to_drop = df_long["load_actual"].isna().sum()
-    print("Rows with still missing 'load_actual' count:", count_to_drop)
-    df_long = df_long.dropna(subset=["load_actual"]).reset_index(drop=True)
-
-    # Drop rows with missing key numeric features (unlikely)
-    key_numeric_features = ["temperature", "rad_dir", "rad_diff"]
-    count_to_drop = df_long[key_numeric_features].isna().any(axis=1).sum()
-    print("Rows with still missing key numeric features count:", count_to_drop)
-    df_long = df_long.dropna(subset=key_numeric_features)
-
-    # Drop rows where "load_forecast" is still missing (unlikely)
-    count_to_drop = df_long["load_forecast"].isna().sum()
-    print("Rows with still missing 'load_forecast' count:", count_to_drop)
-    df_long = df_long.dropna(subset=["load_forecast"]).reset_index(drop=True)
-
-    df_long["is_weekend"] = df_long["is_weekend"].astype(bool)
-    df_long["is_holiday"] = df_long["is_holiday"].astype(bool)
-
-    return df_long
-
-
-# 3. Time-based feature engineering
-def add_time_features(df_long: pd.DataFrame) -> pd.DataFrame:
-    df = df_long.copy()
-    df["hour"] = df["utc_timestamp"].dt.hour
-    df["dayofweek"] = df["utc_timestamp"].dt.dayofweek  # categorical
-    df["dayofyear"] = df["utc_timestamp"].dt.dayofyear
-
-    # Cyclic encoding
-    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-    df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-    df["doy_sin"] = np.sin(2 * np.pi * df["dayofyear"] / 365)
-    df["doy_cos"] = np.cos(2 * np.pi * df["dayofyear"] / 365)
-
-    return df
-
-
-# 4. Lag features (one-day lag: 24 hours)
-def add_lag_features(
-    df_long: pd.DataFrame, lags: tuple[int, ...] = (24,)
-) -> pd.DataFrame:
-    df = df_long.sort_values(["country", "utc_timestamp"]).copy()
-    for lag in lags:
-        df[f"load_lag_{lag}"] = df.groupby("country")["load_actual"].shift(lag)
-
-    # Drop rows with missing lag values (early in the series)
-    lag_cols = [f"load_lag_{lag}" for lag in lags]
-    return df.dropna(subset=lag_cols).reset_index(drop=True)
-
-
-# 5. Build time-based split
+# 1. Build time-based split
 def time_based_split(df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
     ts_sorted = df["utc_timestamp"].sort_values()
     t1 = ts_sorted.quantile(0.70)
@@ -120,7 +27,7 @@ def time_based_split(df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]
     return mask_train, mask_valid, mask_test
 
 
-# 6. preprocessing + ML model pipeline
+# 2. preprocessing + ML model pipeline
 def build_model_pipeline(
     numeric_features: list[str],
     categorical_features: list[str],
@@ -154,7 +61,7 @@ def build_model_pipeline(
     )
 
 
-# 7. Evaluation helpers
+# 3. Evaluation helpers
 def _regression_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict[str, float]:
     """Compute a set of useful regression metrics."""
     y_true = np.asarray(y_true)
@@ -247,13 +154,9 @@ def evaluate_baseline(
 
 def main() -> None:
     # Load and reshape data
-    df_wide = pd.read_csv(UNITED_DATASET_CSV_PATH)
-    df_long = wide_to_long(df_wide)
-
-    # lean & feature engineering
-    df_long = handle_missing_values(df_long)
-    df_long = add_time_features(df_long)
-    df_long = add_lag_features(df_long, lags=(24,))
+    df_raw_long = load_raw_long_dataset()
+    df_long = preprocess_raw_long_dataset(df_raw_long)
+    df_long = add_features(df_long)
 
     # Define features and target
     target_col = "load_actual"
