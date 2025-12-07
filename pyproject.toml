@@ -8,6 +8,7 @@ dependencies = [
     "aiohttp>=3.13.2",
     "holidays>=0.86",
     "pandas>=2.3.3",
+    "scikit-learn>=1.7.2",
 ]
 
 [dependency-groups]
@@ -34,6 +35,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401", "N999"]
+"app/scripts/5_ml_model.py" = ["N803", "N806"]
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true

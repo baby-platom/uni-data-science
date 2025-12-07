@@ -1,5 +1,7 @@
 from pathlib import Path
 
+RANDOM_STATE = 42
+
 DATA_DIR = Path("data")
 
 TIME_SERIES_CSV_PATH = DATA_DIR / "time_series_60min_singleindex.csv"
