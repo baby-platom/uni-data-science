@@ -125,10 +125,8 @@ def check_load_columns(df: pd.DataFrame, country_codes: list[str]) -> dict[str, 
     """Chec load columns for each country.
 
     - Load actual & forecast: missingness, non-negative, distribution, outliers
-    - Simple alignment check between forecast(t) and actual(t+24h)
     """
     results: dict[str, Any] = {}
-    n_rows = len(df)
 
     for code in country_codes:
         actual_col = f"{code}_load_actual_entsoe_transparency"
@@ -148,30 +146,9 @@ def check_load_columns(df: pd.DataFrame, country_codes: list[str]) -> dict[str, 
             non_negative=True,
         )
 
-        # Simple check: forecast for hour t should roughly match actual at t+24
-        alignment = {}
-
-        if n_rows > 24:
-            actual_shifted = pd.to_numeric(df[actual_col], errors="coerce").shift(-24)
-            forecast_series = pd.to_numeric(df[forecast_col], errors="coerce")
-            mask = actual_shifted.notna() & forecast_series.notna()
-            if mask.sum() > 0:
-                diff = (actual_shifted - forecast_series)[mask]
-                alignment = {
-                    "n_pairs": int(mask.sum()),
-                    "mean_abs_diff": float(diff.abs().mean()),
-                    "median_abs_diff": float(diff.abs().median()),
-                    "corr": float(actual_shifted[mask].corr(forecast_series[mask])),
-                }
-            else:
-                alignment = {"n_pairs": 0}
-        else:
-            alignment = {"n_pairs": 0}
-
         results[code] = {
             "actual": actual_report,
             "forecast": forecast_report,
-            "forecast_vs_actual_plus_24h": alignment,
         }
 
     return results
