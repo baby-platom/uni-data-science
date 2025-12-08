@@ -106,43 +106,6 @@ def permutation_importance_by_feature(
     return df_imp
 
 
-def plot_actual_vs_predicted_for_country(
-    df_eval: pd.DataFrame,
-    country: str,
-    hours: int = 24 * 7,
-    output_dir: Path = PLOTS_DIR,
-) -> None:
-    """Plot actual vs predicted load over time for a given country on the TEST set.
-
-    Args:
-        df_eval: TEST set dataframe.
-        country: country code (e.g. 'DE', 'FR', 'IT') as used in COUNTRY_CODES.
-        hours: limit the plot to the first `hours` entries in the test period for
-            readability.
-        output_dir: folder where the plot PNG will be saved.
-    """
-    df_c = df_eval[df_eval["country"] == country].sort_values("utc_timestamp")
-    df_c = df_c.iloc[:hours]
-
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-    plt.figure(figsize=(10, 4))
-    plt.plot(df_c["utc_timestamp"], df_c["y_true"], label="Actual")
-    plt.plot(df_c["utc_timestamp"], df_c["y_pred"], label="Predicted")
-
-    plt.title(f"Electricity load - Actual vs Predicted ({country}, TEST set)")
-    plt.xlabel("UTC timestamp")
-    plt.ylabel("Load [MW]")
-    plt.legend()
-    plt.tight_layout()
-
-    output_path = Path(output_dir) / f"actual_vs_pred_{country}.png"
-    plt.savefig(output_path, dpi=150)
-    plt.close()
-
-    print(f"Saved actual_vs_pred_ plot for country {country} to {output_path}")
-
-
 def hourly_error_profile(
     df_eval: pd.DataFrame,
     output_dir: Path = PLOTS_DIR,
@@ -204,9 +167,5 @@ def get_trained_model_insights(
         feature_cols=feature_cols,
         n_repeats=5,
     )
-
-    print("\nPlotting actual vs predicted load per country:")
-    for c in ["DE", "FR", "IT"]:
-        plot_actual_vs_predicted_for_country(df_eval_test, country=c, hours=24 * 7)
 
     hourly_error_profile(df_eval_test)
