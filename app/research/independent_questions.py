@@ -20,7 +20,7 @@ def rq_temperature_sensitivity(
     country_code: str | None = None,
     output_dir: Path = PLOTS_DIR,
 ) -> pd.DataFrame:
-    """Assess the temperature-load relationship accross season and countries.
+    """Assess the temperature-load relationship accross season.
 
     If `country_code` is `None`, all countries together are considered.
     """
