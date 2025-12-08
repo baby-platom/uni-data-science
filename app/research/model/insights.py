@@ -100,7 +100,7 @@ def permutation_importance_by_feature(
 
     df_imp = pd.DataFrame(rows).sort_values("delta_rmse", ascending=False)
 
-    print("\nPermutation importance on TEST set (increase in RMSE when shuffled):")
+    print("\nPermutation importance on TEST set:")
     print(df_imp[["feature", "delta_rmse"]].round(4))
 
     return df_imp
