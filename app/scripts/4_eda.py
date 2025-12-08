@@ -52,7 +52,7 @@ def plot_avg_load_by_hour(
 DAY_NAMES = {0: "Mon", 1: "Tue", 2: "Wed", 3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}
 
 
-def plot_avg_load_by_weekday(
+def plot_avg_load_by_day_of_week(
     df: pd.DataFrame,
     country_code: str | None = None,
     output_dir: Path = PLOTS_DIR,
@@ -162,8 +162,8 @@ def main() -> None:
     plot_avg_load_by_hour(df_long)
     plot_avg_load_by_hour(df_long, "DE")
 
-    plot_avg_load_by_weekday(df_long)
-    plot_avg_load_by_weekday(df_long, "DE")
+    plot_avg_load_by_day_of_week(df_long)
+    plot_avg_load_by_day_of_week(df_long, "DE")
 
     plot_avg_load_by_temperature_bin(df_long, "DE")
 
