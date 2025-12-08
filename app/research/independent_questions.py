@@ -20,10 +20,7 @@ def rq_temperature_sensitivity(
     country_code: str | None = None,
     output_dir: Path = PLOTS_DIR,
 ) -> pd.DataFrame:
-    """Analyze the temperature sensitivity RQ.
-
-    How does the relationship between hourly electricity load and temperature
-    differ between seasons (winter, summer, shoulder) for a given region?
+    """Assess the temperature-load relationship accross season and countries.
 
     If `country_code` is `None`, all countries together are considered.
     """
