@@ -1,12 +1,9 @@
-from pathlib import Path
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
 
-from app.constants import PLOTS_DIR, RANDOM_STATE
+from app.constants import RANDOM_STATE
 from app.research.model.evaluation import get_regression_metrics
 
 
@@ -106,43 +103,6 @@ def permutation_importance_by_feature(
     return df_imp
 
 
-def hourly_error_profile(
-    df_eval: pd.DataFrame,
-    output_dir: Path = PLOTS_DIR,
-) -> pd.DataFrame:
-    """Plot hourly error profile (hour vs mean_abs_error)."""
-    print("\nPlotting hourly error profile:")
-
-    df_hour = df_eval.copy()
-    df_hour["hour"] = df_hour["utc_timestamp"].dt.hour
-
-    agg = (
-        df_hour.groupby("hour")["abs_error"]
-        .mean()
-        .reset_index()
-        .rename(columns={"abs_error": "mean_abs_error"})
-        .sort_values("hour")
-    )
-
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(8, 4))
-    plt.plot(agg["hour"], agg["mean_abs_error"], marker="o")
-    plt.xticks(range(24))
-    plt.xlabel("Hour of day (UTC)")
-    plt.ylabel("Mean absolute error [MW]")
-    plt.title("Mean absolute error by hour-of-day (TEST set)")
-    plt.grid(True, axis="y", alpha=0.3)
-    plt.tight_layout()
-
-    output_path = Path(output_dir) / "hourly_error_profile.png"
-    plt.savefig(output_path, dpi=150)
-    plt.close()
-
-    print(f"Saved hourly error profile plot to {output_path}")
-
-    return agg
-
-
 def get_trained_model_insights(
     df_long: pd.DataFrame,
     mask_test: pd.Series,
@@ -167,5 +127,3 @@ def get_trained_model_insights(
         feature_cols=feature_cols,
         n_repeats=5,
     )
-
-    hourly_error_profile(df_eval_test)
