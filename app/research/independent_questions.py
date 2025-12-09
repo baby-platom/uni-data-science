@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -70,36 +69,4 @@ def rq_temperature_sensitivity(
     print(f"\nTemperature-load relationship for region={region_label}:")
     print(result)
 
-    plot_rq_temperature_sensitivity(
-        result,
-        region_label=region_label,
-        output_dir=output_dir,
-    )
     return result
-
-
-def plot_rq_temperature_sensitivity(
-    result: pd.DataFrame,
-    region_label: str,
-    output_dir: Path = PLOTS_DIR,
-) -> None:
-    """Bar chart of slope (MW/°C) by season for a region."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    seasons_order = ["winter", "shoulder", "summer"]
-    result = result.set_index("season").reindex(seasons_order).reset_index()
-    result = result.dropna(subset=["slope_MW_per_degC"])
-
-    fig, ax = plt.subplots(figsize=(6, 4))
-
-    ax.bar(result["season"], result["slope_MW_per_degC"])
-    ax.axhline(0.0, linewidth=0.8)
-    ax.set_ylabel("Slope of load vs temperature [MW / °C]")
-    ax.set_title(f"Temperature sensitivity by season - {region_label}")
-    fig.tight_layout()
-
-    plot_path = output_dir / f"rq_temperature_sensitivity_{region_label}.png"
-    fig.savefig(plot_path, dpi=150)
-
-    print(f"Saved plot to {plot_path}")
-    plt.close(fig)
