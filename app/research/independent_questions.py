@@ -1,9 +1,5 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
-
-from app.constants import PLOTS_DIR
 
 
 def _month_to_season(m: int) -> str:
@@ -17,7 +13,6 @@ def _month_to_season(m: int) -> str:
 def rq_temperature_sensitivity(
     df_long: pd.DataFrame,
     country_code: str | None = None,
-    output_dir: Path = PLOTS_DIR,
 ) -> pd.DataFrame:
     """Assess the temperature-load relationship accross season.
 
