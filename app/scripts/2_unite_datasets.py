@@ -106,8 +106,9 @@ def select_weather_columns(weather: pd.DataFrame) -> pd.DataFrame:
     for country in COUNTRY_CODES:
         for suffix in WEATHER_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
-            if col in weather.columns:
-                weather_sel[col] = weather[col]
+            if col not in weather.columns:
+                raise ValueError("Missing required column")
+            weather_sel[col] = weather[col]
 
     return weather_sel
 
@@ -170,16 +171,13 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     ordered_cols = ["utc_timestamp", "date", "is_weekend"]
     used = set(ordered_cols)
 
-    # Per-country blocks
     for country in COUNTRY_CODES:
-        # 3 load-related
         for suffix in TS_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
             if col in df.columns and col not in used:
                 ordered_cols.append(col)
                 used.add(col)
 
-        # 3 weather-related
         for suffix in WEATHER_REQUIRED_SUFFIXES:
             col = f"{country}_{suffix}"
             if col in df.columns and col not in used:
