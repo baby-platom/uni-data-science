@@ -60,7 +60,7 @@ def _summarize_numeric_series(
         result["n_missing"] = n_missing
         result["missing_pct"] = float(n_missing / n * 100.0) if n > 0 else np.nan
 
-    desc = s_numeric.describe(percentiles=[0.01, 0.05, 0.5, 0.95, 0.99])
+    desc = s_numeric.describe()
 
     invalid_mask = pd.Series(False, index=s_numeric.index)
 
@@ -132,9 +132,6 @@ def check_load_columns(df: pd.DataFrame, country_codes: list[str]) -> dict[str, 
         actual_col = f"{code}_load_actual_entsoe_transparency"
         forecast_col = f"{code}_load_forecast_entsoe_transparency"
 
-        if actual_col not in df.columns or forecast_col not in df.columns:
-            continue
-
         actual_report = _summarize_numeric_series(
             df[actual_col],
             actual_col,
@@ -166,31 +163,29 @@ def check_temperature_and_radiation(
         diff_col = f"{code}_radiation_diffuse_horizontal"
 
         country_result: dict[str, Any] = {}
-        if temp_col in df.columns:
-            country_result["temperature"] = _summarize_numeric_series(
-                df[temp_col],
-                temp_col,
-                hard_min=-40.0,
-                hard_max=50.0,
-            )
 
-        if dir_col in df.columns:
-            country_result["radiation_direct"] = _summarize_numeric_series(
-                df[dir_col],
-                dir_col,
-                non_negative=True,
-                hard_min=0.0,
-                hard_max=1500.0,  # very conservative physical upper bound
-            )
+        country_result["temperature"] = _summarize_numeric_series(
+            df[temp_col],
+            temp_col,
+            hard_min=-40.0,
+            hard_max=50.0,
+        )
 
-        if diff_col in df.columns:
-            country_result["radiation_diffuse"] = _summarize_numeric_series(
-                df[diff_col],
-                diff_col,
-                non_negative=True,
-                hard_min=0.0,
-                hard_max=1500.0,
-            )
+        country_result["radiation_direct"] = _summarize_numeric_series(
+            df[dir_col],
+            dir_col,
+            non_negative=True,
+            hard_min=0.0,
+            hard_max=1500.0,  # very conservative physical upper bound
+        )
+
+        country_result["radiation_diffuse"] = _summarize_numeric_series(
+            df[diff_col],
+            diff_col,
+            non_negative=True,
+            hard_min=0.0,
+            hard_max=1500.0,
+        )
 
         results[code] = country_result
 
