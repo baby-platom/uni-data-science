@@ -1,5 +1,5 @@
 # uni-data-science
-The repository contains the code of the End-to-End Data Science / Computer Science / Software Engineering project. The topic is "Machine Learning Forecasting and Exploratory Analysis of European Electricity Markets".
+The repository contains the code of the End-to-End Data Science / Computer Science / Software Engineering project. The topic is "Machine Learning Forecasting and Analysis of European Electricity Markets".
 
 ## Table of Contents
 1. [Overview](#overview)
